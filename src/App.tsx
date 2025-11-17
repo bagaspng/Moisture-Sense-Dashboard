@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card";
 import { Button } from "./components/ui/button";
 import { Switch } from "./components/ui/switch";
@@ -10,15 +10,12 @@ import {
   Thermometer,
   Wind,
   Power,
-  Home,
-  LayoutDashboard,
-  Info,
-  Settings,
   CloudRain,
   AlertTriangle,
-  Sparkles,
   Clock,
   Zap,
+  Loader,
+  AlertCircle,
 } from "lucide-react";
 import {
   LineChart,
@@ -30,6 +27,8 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from "recharts";
+import { fetchLatest, fetchEvents, setPump } from "./lib/api";
+import { LatestState, EventItem } from "./types/index";
 
 // Mock data for trend chart
 const moistureTrendData = [
@@ -48,64 +47,116 @@ const moistureTrendData = [
   { time: "24:00", moisture: 58 },
 ];
 
-const eventHistory = [
-  {
-    timestamp: "14:32:15",
-    type: "pump_on" as const,
-    description: "Pump activated automatically (moisture: 35%)",
-  },
-  {
-    timestamp: "14:30:00",
-    type: "warning" as const,
-    description: "Soil moisture below threshold",
-  },
-  {
-    timestamp: "13:45:22",
-    type: "pump_off" as const,
-    description: "Pump deactivated (target reached)",
-  },
-  {
-    timestamp: "11:20:10",
-    type: "rain" as const,
-    description: "Rain detected - automatic irrigation paused",
-  },
-  {
-    timestamp: "10:15:33",
-    type: "pump_on" as const,
-    description: "Pump activated manually",
-  },
-  {
-    timestamp: "10:10:00",
-    type: "auto" as const,
-    description: "System switched to Auto mode",
-  },
-  {
-    timestamp: "08:00:00",
-    type: "pump_off" as const,
-    description: "Scheduled watering completed",
-  },
-  {
-    timestamp: "07:15:20",
-    type: "pump_on" as const,
-    description: "Morning auto-watering initiated",
-  },
-];
+/**
+ * Helper function to format backend event type to EventHistoryItem type
+ */
+const formatEventType = (backendType: string): "pump_on" | "pump_off" | "warning" | "rain" | "auto" => {
+  const typeMap: Record<string, "pump_on" | "pump_off" | "warning" | "rain" | "auto"> = {
+    "Pump ON": "pump_on",
+    "Pump OFF": "pump_off",
+    Warning: "warning",
+    Rain: "rain",
+  };
+  return typeMap[backendType] || "auto";
+};
 
 export default function App() {
-  const [pumpStatus, setPumpStatus] = useState(true);
+  // State dari backend
+  const [latestState, setLatestState] = useState<LatestState>({
+    suhu: 0,
+    kelembapan: 0,
+    soil: 0,
+    rain_status: "-",
+    pompa: "OFF",
+    updated_at: null,
+  });
+
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [pumpLoading, setPumpLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [autoMode, setAutoMode] = useState(true);
+  const [isConnected, setIsConnected] = useState(false);
   const [showDryWarning, setShowDryWarning] = useState(false);
   const [showRainWarning, setShowRainWarning] = useState(false);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Current sensor values
-  const currentMoisture = 58;
-  const currentTemp = 24;
-  const currentHumidity = 68;
-  const rainDetected = false;
+  // Fetch data dari backend
+  const fetchData = async () => {
+    try {
+      const [latestData, eventsData] = await Promise.all([
+        fetchLatest(),
+        fetchEvents(),
+      ]);
+      setLatestState(latestData);
+      setEvents(eventsData);
+      setError(null);
+      setIsConnected(true);
 
-  const handlePumpToggle = () => {
-    setPumpStatus(!pumpStatus);
+      // Trigger warnings based on data
+      if (latestData.soil < 300) {
+        setShowDryWarning(true);
+      } else {
+        setShowDryWarning(false);
+      }
+
+      if (latestData.rain_status === "🌧 Hujan") {
+        setShowRainWarning(true);
+      } else {
+        setShowRainWarning(false);
+      }
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setError("Failed to connect to backend API");
+      setIsConnected(false);
+    }
   };
+
+  // Setup polling setiap 5 detik
+  useEffect(() => {
+    // Fetch pertama kali
+    fetchData();
+
+    // Setup interval polling
+    pollIntervalRef.current = setInterval(() => {
+      fetchData();
+    }, 5000);
+
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, []);
+
+  // Handle pump toggle
+  const handlePumpToggle = async () => {
+    if (autoMode) return;
+
+    const newCmd = latestState.pompa === "ON" ? "OFF" : "ON";
+    setPumpLoading(true);
+
+    try {
+      await setPump(newCmd as "ON" | "OFF");
+      setLatestState((prev) => ({
+        ...prev,
+        pompa: newCmd as "ON" | "OFF",
+      }));
+      setError(null);
+    } catch (err) {
+      console.error("Error setting pump:", err);
+      setError("Failed to change pump state");
+    } finally {
+      setPumpLoading(false);
+    }
+  };
+
+  // Derived values
+  // Normalize soil ADC (0-1023) to percentage (0-100)
+  const currentMoisture = Math.round((latestState.soil / 1023) * 100);
+  const currentTemp = latestState.suhu;
+  const currentHumidity = latestState.kelembapan;
+  const rainDetected = latestState.rain_status === "🌧 Hujan";
+  const pumpStatus = latestState.pompa === "ON";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -121,22 +172,46 @@ export default function App() {
               <span className="text-xl text-gray-900">MoisSense</span>
             </div>
 
-            {/* Navigation Icons */}
+            {/* Connection Status */}
+            <div className="flex items-center gap-2">
+              <div
+                className={`w-3 h-3 rounded-full ${
+                  isConnected ? "bg-green-500" : "bg-red-500"
+                }`}
+              />
+              <span className="text-sm text-gray-600">
+                {isConnected ? "Connected" : "Disconnected"}
+              </span>
+            </div>
           </div>
         </div>
       </nav>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Error Alert */}
+        {error && (
+          <Alert className="mb-6 border-red-300 bg-red-50">
+            <AlertCircle className="h-5 w-5 text-red-600" />
+            <AlertDescription className="text-red-800">{error}</AlertDescription>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute top-2 right-2"
+              onClick={() => setError(null)}
+            >
+              ×
+            </Button>
+          </Alert>
+        )}
+
         {/* Warning Banners */}
         {showDryWarning && (
           <Alert className="mb-6 border-yellow-300 bg-yellow-50">
             <AlertTriangle className="h-5 w-5 text-yellow-600" />
             <AlertDescription className="text-yellow-800">
-              <span className="text-yellow-900">
-                Soil moisture critically low
-              </span>{" "}
-              - Consider activating the irrigation pump
+              <span className="text-yellow-900">Soil moisture critically low</span> (ADC:{" "}
+              {latestState.soil}) - Consider activating the irrigation pump
             </AlertDescription>
             <Button
               variant="ghost"
@@ -183,6 +258,9 @@ export default function App() {
                     <div className="text-5xl text-blue-600">
                       {currentMoisture}%
                     </div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      ADC: {latestState.soil}
+                    </div>
                   </div>
                 </div>
 
@@ -206,7 +284,7 @@ export default function App() {
                     } border`}
                   >
                     <CloudRain size={16} className="mr-2" />
-                    {rainDetected ? "Rain Detected" : "No Rain"}
+                    {rainDetected ? "🌧 Hujan" : "☀ Cerah"}
                   </Badge>
                   <Badge
                     className={`px-4 py-2 ${
@@ -255,7 +333,7 @@ export default function App() {
                     <div>
                       <div className="text-blue-900">Auto Mode</div>
                       <div className="text-xs text-blue-600 mt-1">
-                        Automatically activate pump based on moisture
+                        Automatically activate pump based on soil moisture
                       </div>
                     </div>
                     <Switch
@@ -272,11 +350,15 @@ export default function App() {
                     pumpStatus
                       ? "bg-green-600 hover:bg-green-700 hover:shadow-lg hover:shadow-green-200"
                       : "bg-blue-600 hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200"
-                  } text-white`}
+                  } text-white disabled:opacity-50`}
                   onClick={handlePumpToggle}
-                  disabled={autoMode}
+                  disabled={autoMode || pumpLoading || !isConnected}
                 >
-                  <Power className="mr-3" size={28} />
+                  {pumpLoading ? (
+                    <Loader className="mr-3 animate-spin" size={28} />
+                  ) : (
+                    <Power className="mr-3" size={28} />
+                  )}
                   <div className="text-left">
                     <div className="text-sm opacity-90">
                       {pumpStatus ? "Pump is Active" : "Pump is Off"}
@@ -290,6 +372,12 @@ export default function App() {
                 {autoMode && (
                   <p className="text-xs text-gray-500 text-center">
                     Manual controls disabled in Auto Mode
+                  </p>
+                )}
+
+                {!isConnected && (
+                  <p className="text-xs text-red-500 text-center">
+                    Pump controls disabled - API disconnected
                   </p>
                 )}
               </div>
@@ -397,24 +485,28 @@ export default function App() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-gray-900">
               <Clock size={20} className="text-blue-600" />
-              Event History
+              Event History ({events.length} events)
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-1 max-h-96 overflow-y-auto">
-              {eventHistory.map((event, index) => (
-                <div
-                  key={index}
-                  className="hover:bg-gray-50 rounded-lg transition-colors"
-                >
-                  <EventHistoryItem
-                    timestamp={event.timestamp}
-                    type={event.type}
-                    description={event.description}
-                  />
-                </div>
-              ))}
-            </div>
+            {events.length === 0 ? (
+              <p className="text-center text-gray-500 py-4">No events recorded yet</p>
+            ) : (
+              <div className="space-y-1 max-h-96 overflow-y-auto">
+                {events.map((event, index) => (
+                  <div
+                    key={index}
+                    className="hover:bg-gray-50 rounded-lg transition-colors"
+                  >
+                    <EventHistoryItem
+                      timestamp={new Date(event.ts).toLocaleTimeString()}
+                      type={formatEventType(event.type)}
+                      description={event.message}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </main>
@@ -425,6 +517,11 @@ export default function App() {
           <p className="text-center text-sm text-gray-500">
             MoisSense – Smart Agriculture IoT System
           </p>
+          {latestState.updated_at && (
+            <p className="text-center text-xs text-gray-400 mt-2">
+              Last updated: {new Date(latestState.updated_at).toLocaleTimeString()}
+            </p>
+          )}
         </div>
       </footer>
     </div>
