@@ -50,8 +50,13 @@ const moistureTrendData = [
 /**
  * Helper function to format backend event type to EventHistoryItem type
  */
-const formatEventType = (backendType: string): "pump_on" | "pump_off" | "warning" | "rain" | "auto" => {
-  const typeMap: Record<string, "pump_on" | "pump_off" | "warning" | "rain" | "auto"> = {
+const formatEventType = (
+  backendType: string
+): "pump_on" | "pump_off" | "warning" | "rain" | "auto" => {
+  const typeMap: Record<
+    string,
+    "pump_on" | "pump_off" | "warning" | "rain" | "auto"
+  > = {
     "Pump ON": "pump_on",
     "Pump OFF": "pump_off",
     Warning: "warning",
@@ -193,7 +198,9 @@ export default function App() {
         {error && (
           <Alert className="mb-6 border-red-300 bg-red-50">
             <AlertCircle className="h-5 w-5 text-red-600" />
-            <AlertDescription className="text-red-800">{error}</AlertDescription>
+            <AlertDescription className="text-red-800">
+              {error}
+            </AlertDescription>
             <Button
               variant="ghost"
               size="sm"
@@ -210,8 +217,11 @@ export default function App() {
           <Alert className="mb-6 border-yellow-300 bg-yellow-50">
             <AlertTriangle className="h-5 w-5 text-yellow-600" />
             <AlertDescription className="text-yellow-800">
-              <span className="text-yellow-900">Soil moisture critically low</span> (ADC:{" "}
-              {latestState.soil}) - Consider activating the irrigation pump
+              <span className="text-yellow-900">
+                Soil moisture critically low
+              </span>{" "}
+              (ADC: {latestState.soil}) - Consider activating the irrigation
+              pump
             </AlertDescription>
             <Button
               variant="ghost"
@@ -490,7 +500,9 @@ export default function App() {
           </CardHeader>
           <CardContent>
             {events.length === 0 ? (
-              <p className="text-center text-gray-500 py-4">No events recorded yet</p>
+              <p className="text-center text-gray-500 py-4">
+                No events recorded yet
+              </p>
             ) : (
               <div className="space-y-1 max-h-96 overflow-y-auto">
                 {events.map((event, index) => (
@@ -519,7 +531,8 @@ export default function App() {
           </p>
           {latestState.updated_at && (
             <p className="text-center text-xs text-gray-400 mt-2">
-              Last updated: {new Date(latestState.updated_at).toLocaleTimeString()}
+              Last updated:{" "}
+              {new Date(latestState.updated_at).toLocaleTimeString()}
             </p>
           )}
         </div>

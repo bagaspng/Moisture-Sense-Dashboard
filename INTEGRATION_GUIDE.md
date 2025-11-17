@@ -19,29 +19,32 @@ src/
 ## 🔧 TypeScript Types
 
 ### `LatestState`
+
 ```typescript
 interface LatestState {
-  suhu: number;              // Temperature in °C
-  kelembapan: number;        // Humidity in %
-  soil: number;              // Soil moisture ADC (0-1023)
-  rain_raw?: number;         // Raw rain sensor value
-  rain_status: string;       // "🌧 Hujan" or "☀ Cerah"
-  pompa: "ON" | "OFF";       // Pump status
+  suhu: number; // Temperature in °C
+  kelembapan: number; // Humidity in %
+  soil: number; // Soil moisture ADC (0-1023)
+  rain_raw?: number; // Raw rain sensor value
+  rain_status: string; // "🌧 Hujan" or "☀ Cerah"
+  pompa: "ON" | "OFF"; // Pump status
   updated_at: number | null; // Timestamp in milliseconds
 }
 ```
 
 ### `EventItem`
+
 ```typescript
 interface EventItem {
-  ts: string;                              // ISO timestamp
+  ts: string; // ISO timestamp
   type: "Pump ON" | "Pump OFF" | "Rain" | "Warning";
   level: "info" | "warn" | "error";
-  message: string;                         // Event description
+  message: string; // Event description
 }
 ```
 
 ### `PumpCommandResponse`
+
 ```typescript
 interface PumpCommandResponse {
   status: "ok" | "error";
@@ -55,6 +58,7 @@ interface PumpCommandResponse {
 Semua fungsi API tersedia di `src/lib/api.ts`:
 
 ### 1. `fetchLatest()` - GET `/api/latest`
+
 Mengambil status sensor terbaru.
 
 ```typescript
@@ -63,14 +67,16 @@ console.log(state.soil, state.suhu, state.pompa);
 ```
 
 ### 2. `fetchEvents()` - GET `/api/events`
+
 Mengambil event history (max 50 events terbaru).
 
 ```typescript
 const events = await fetchEvents();
-events.forEach(e => console.log(e.ts, e.type, e.message));
+events.forEach((e) => console.log(e.ts, e.type, e.message));
 ```
 
 ### 3. `setPump(cmd)` - POST `/api/pump`
+
 Mengubah status pompa (ON/OFF).
 
 ```typescript
@@ -100,7 +106,7 @@ Dashboard menggunakan `useEffect` hook untuk polling otomatis:
 - **Interval**: 5 detik
 - **Data yang di-fetch**: Latest state + Event history
 - **Error handling**: Jika API tidak tersedia, koneksi status akan ditampilkan sebagai "Disconnected"
-- **UI Feedback**: 
+- **UI Feedback**:
   - ✅ Loading state pada pump button
   - 🔴 Connection indicator di navbar
   - ⚠️ Error alerts
@@ -109,31 +115,37 @@ Dashboard menggunakan `useEffect` hook untuk polling otomatis:
 ## 📊 Dashboard Features
 
 ### 1. **Real-time Sensor Display**
+
 - **Soil Moisture**: ADC value (0-1023) dengan normalisasi ke percentage (0-100%)
 - **Temperature**: Dalam °C
 - **Humidity**: Dalam %
 - **Rain Status**: 🌧 Hujan / ☀ Cerah
 
 ### 2. **Pump Control**
+
 - Toggle ON/OFF button (disabled saat Auto Mode)
 - Loading spinner saat mengirim command
 - Disabled state ketika API disconnected
 
 ### 3. **Auto Mode**
+
 - Switch untuk enable/disable automatic irrigation
 - Manual controls disabled saat Auto Mode aktif
 
 ### 4. **Warnings & Alerts**
+
 - **Dry Warning**: Muncul ketika soil moisture < 300 ADC
 - **Rain Warning**: Muncul ketika cuaca "Hujan"
 - **Connection Alert**: Jika backend tidak tersedia
 
 ### 5. **Event History**
+
 - Menampilkan 50 event terbaru dari backend
 - Formatkan timestamp dengan `toLocaleTimeString()`
 - Event types: Pump ON/OFF, Rain, Warning
 
 ### 6. **Status Badges**
+
 - Pump Status (ON/OFF)
 - Weather Status (Hujan/Cerah)
 - Mode Status (Auto/Manual)
@@ -141,16 +153,18 @@ Dashboard menggunakan `useEffect` hook untuk polling otomatis:
 ## 🚀 Usage
 
 ### Startup
+
 1. Pastikan backend Node-RED sudah running di `http://localhost:1880`
 2. Start frontend: `npm run dev`
 3. Dashboard akan otomatis polling setiap 5 detik
 
 ### Testing API Connection
+
 Buka browser console dan test:
 
 ```javascript
 // Import dari module
-import { fetchLatest, fetchEvents, setPump } from './lib/api.ts';
+import { fetchLatest, fetchEvents, setPump } from "./lib/api.ts";
 
 // Test fetch latest
 fetchLatest().then(console.log);
@@ -167,7 +181,9 @@ setPump("ON").then(console.log);
 Backend harus provide 3 endpoints:
 
 ### GET `/api/latest`
+
 Response:
+
 ```json
 {
   "suhu": 24,
@@ -180,7 +196,9 @@ Response:
 ```
 
 ### GET `/api/events`
+
 Response:
+
 ```json
 [
   {
@@ -193,7 +211,9 @@ Response:
 ```
 
 ### POST `/api/pump`
+
 Request Body:
+
 ```json
 {
   "cmd": "ON"
@@ -201,6 +221,7 @@ Request Body:
 ```
 
 Response:
+
 ```json
 {
   "status": "ok",
@@ -211,16 +232,19 @@ Response:
 ## 🐛 Troubleshooting
 
 ### Connection Timeout
+
 - Pastikan Node-RED backend running
 - Check CORS headers di backend
 - Verify URL di `.env.local`
 
 ### Sensor Values Not Updating
+
 - Check browser console untuk error messages
 - Verify backend sedang menerima data dari ESP2
 - Check flow context di Node-RED
 
 ### Pump Command Not Working
+
 - Verify MQTT connection di Node-RED
 - Check ESP2 subscribed ke topic `smartfarm/pompa`
 - Check auto mode is disabled

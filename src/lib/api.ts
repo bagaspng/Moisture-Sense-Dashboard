@@ -1,6 +1,7 @@
 import { LatestState, EventItem, PumpCommandResponse } from "../types/index";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:1880";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:1880";
 
 const handleApiError = (error: unknown): string => {
   if (error instanceof Error) {
@@ -46,7 +47,9 @@ export const fetchEvents = async (): Promise<EventItem[]> => {
 /**
  * Set pump state (ON/OFF) via backend
  */
-export const setPump = async (cmd: "ON" | "OFF"): Promise<PumpCommandResponse> => {
+export const setPump = async (
+  cmd: "ON" | "OFF"
+): Promise<PumpCommandResponse> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/pump`, {
       method: "POST",
