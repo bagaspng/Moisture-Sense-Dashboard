@@ -252,144 +252,111 @@ export default function App() {
           </Alert>
         )}
 
-        {/* TOP SECTION - System Controls (Hero Section) */}
+        {/* TOP SECTION - System Status (Monitoring Only) */}
         <Card className="mb-8 border-gray-200 shadow-md">
-          <CardContent className="p-6 sm:p-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Left Side - Current Status */}
-              <div className="space-y-6">
-                {/* Large Moisture Display */}
-                <div className="flex items-end gap-4">
-                  <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-100">
-                    <Droplets className="text-blue-600" size={32} />
+          <CardContent className="p-6 sm:p-8 space-y-6">
+            {/* Row utama: moisture + badges + info */}
+            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+              {/* Moisture hero */}
+              <div className="flex items-end gap-4">
+                <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-100">
+                  <Droplets className="text-blue-600" size={32} />
+                </div>
+                <div>
+                  <div className="text-sm text-gray-500">Soil Moisture</div>
+                  <div className="text-5xl font-semibold text-blue-600 leading-tight">
+                    {currentMoisture}%
                   </div>
-                  <div>
-                    <div className="text-sm text-gray-500">Soil Moisture</div>
-                    <div className="text-5xl text-blue-600">
-                      {currentMoisture}%
-                    </div>
-                    <div className="text-xs text-gray-400 mt-1">
-                      ADC: {latestState.soil}
-                    </div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    ADC: {latestState.soil}
                   </div>
                 </div>
+              </div>
 
+              {/* Badges + info status */}
+              <div className="flex flex-col gap-3 md:items-end">
                 {/* Status Badges */}
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3 justify-start md:justify-end">
                   <Badge
-                    className={`px-4 py-2 ${
+                    className={`px-4 py-2 border ${
                       pumpStatus
                         ? "bg-green-100 text-green-800 border-green-200"
                         : "bg-gray-100 text-gray-800 border-gray-200"
-                    } border`}
+                    }`}
                   >
                     <Power size={16} className="mr-2" />
                     Pump {pumpStatus ? "ON" : "OFF"}
                   </Badge>
+
                   <Badge
-                    className={`px-4 py-2 ${
+                    className={`px-4 py-2 border ${
                       rainDetected
                         ? "bg-blue-100 text-blue-800 border-blue-200"
                         : "bg-gray-100 text-gray-600 border-gray-200"
-                    } border`}
+                    }`}
                   >
                     <CloudRain size={16} className="mr-2" />
                     {rainDetected ? "🌧 Hujan" : "☀ Cerah"}
                   </Badge>
+
                   <Badge
-                    className={`px-4 py-2 ${
+                    className={`px-4 py-2 border ${
                       autoMode
                         ? "bg-blue-100 text-blue-800 border-blue-200"
                         : "bg-purple-100 text-purple-800 border-purple-200"
-                    } border`}
+                    }`}
                   >
                     <Zap size={16} className="mr-2" />
                     {autoMode ? "Auto Mode" : "Manual Mode"}
                   </Badge>
                 </div>
 
-                {/* Temperature & Humidity Pills */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex items-center gap-3 p-4 bg-red-50 rounded-xl border border-red-100">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-red-100">
-                      <Thermometer className="text-red-600" size={20} />
-                    </div>
-                    <div>
-                      <div className="text-xs text-red-600">Temperature</div>
-                      <div className="text-xl text-red-900">
-                        {currentTemp}°C
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-4 bg-green-50 rounded-xl border border-green-100">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-green-100">
-                      <Wind className="text-green-600" size={20} />
-                    </div>
-                    <div>
-                      <div className="text-xs text-green-600">Humidity</div>
-                      <div className="text-xl text-green-900">
-                        {currentHumidity}%
-                      </div>
-                    </div>
+                {/* Info koneksi + last update */}
+                <div className="flex flex-col gap-1 text-xs text-gray-500 md:items-end">
+                  <span
+                    className={`inline-flex items-center px-2.5 py-1 rounded-full font-medium ${
+                      isConnected
+                        ? "bg-emerald-50 text-emerald-700"
+                        : "bg-red-50 text-red-700"
+                    }`}
+                  >
+                    <span className="mr-1 h-2 w-2 rounded-full bg-current" />
+                    {isConnected ? "Connected to API" : "Disconnected from API"}
+                  </span>
+                  <span className="text-[11px] text-gray-400">
+                    Last update:{" "}
+                    {latestState.updated_at
+                      ? new Date(latestState.updated_at).toLocaleString()
+                      : "No data yet"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Temperature & Humidity Pills */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex items-center gap-3 p-4 bg-red-50 rounded-xl border border-red-100">
+                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-red-100">
+                  <Thermometer className="text-red-600" size={20} />
+                </div>
+                <div>
+                  <div className="text-xs text-red-600">Temperature</div>
+                  <div className="text-xl font-semibold text-red-900">
+                    {currentTemp}°C
                   </div>
                 </div>
               </div>
 
-              {/* Right Side - Controls */}
-              <div className="space-y-4">
-                {/* Auto Mode Toggle */}
-                <div className="p-5 bg-blue-50 rounded-xl border border-blue-100">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-blue-900">Auto Mode</div>
-                      <div className="text-xs text-blue-600 mt-1">
-                        Automatically activate pump based on soil moisture
-                      </div>
-                    </div>
-                    <Switch
-                      checked={autoMode}
-                      onCheckedChange={setAutoMode}
-                      className="data-[state=checked]:bg-blue-600"
-                    />
+              <div className="flex items-center gap-3 p-4 bg-green-50 rounded-xl border border-green-100">
+                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-green-100">
+                  <Wind className="text-green-600" size={20} />
+                </div>
+                <div>
+                  <div className="text-xs text-green-600">Humidity</div>
+                  <div className="text-xl font-semibold text-green-900">
+                    {currentHumidity}%
                   </div>
                 </div>
-
-                {/* Main Pump Control Button */}
-                <Button
-                  className={`w-full h-20 text-lg transition-all ${
-                    pumpStatus
-                      ? "bg-green-600 hover:bg-green-700 hover:shadow-lg hover:shadow-green-200"
-                      : "bg-blue-600 hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200"
-                  } text-white disabled:opacity-50`}
-                  onClick={handlePumpToggle}
-                  disabled={autoMode || pumpLoading || !isConnected}
-                >
-                  {pumpLoading ? (
-                    <Loader className="mr-3 animate-spin" size={28} />
-                  ) : (
-                    <Power className="mr-3" size={28} />
-                  )}
-                  <div className="text-left">
-                    <div className="text-sm opacity-90">
-                      {pumpStatus ? "Pump is Active" : "Pump is Off"}
-                    </div>
-                    <div>
-                      {pumpStatus ? "Click to Turn OFF" : "Click to Activate"}
-                    </div>
-                  </div>
-                </Button>
-
-                {autoMode && (
-                  <p className="text-xs text-gray-500 text-center">
-                    Manual controls disabled in Auto Mode
-                  </p>
-                )}
-
-                {!isConnected && (
-                  <p className="text-xs text-red-500 text-center">
-                    Pump controls disabled - API disconnected
-                  </p>
-                )}
               </div>
             </div>
           </CardContent>
