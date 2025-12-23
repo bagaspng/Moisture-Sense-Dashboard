@@ -110,31 +110,14 @@ Contoh payload MQTT dari ESP (agar Node-RED mudah memproses):
 
 ---
 
-## 📚 Tips singkat agar lancar
-- Pakai SSE untuk push satu-arah yang simpel (server → client).  
-- Gunakan WebSocket jika butuh komunikasi dua arah.  
-- Jika hanya sesekali update, polling setiap beberapa detik sudah cukup dan mudah.
-
----
-
 ## 🤝 Kontribusi & Bantuan
 Mau menambahkan fitur, perbaikan UI, atau contoh integrasi Node-RED? Silakan:
 1. Buka issue dengan menjelaskan ide/bug. 📝  
 2. Fork repo, buat perubahan, lalu kirim pull request. 🔁
 
-Butuh bantuan membuat contoh Node-RED flow atau contoh kode frontend (SSE / polling)? Saya bisa bantu buatkan! 🙋‍♂️
-
 ---
-
-## 📄 Lisensi
-Gunakan lisensi yang Anda pilih (mis. MIT). Jika belum ditentukan, tambahkan file LICENSE sesuai kebutuhan.
 
 ---
 
 Terima kasih sudah menggunakan Moisture Sense Dashboard! 🌿  
-Mau saya tambahkan salah satu contoh berikut sekarang?
-- 🧩 Contoh `.env.example`
-- 🔌 Contoh client SSE (potongan kode)
-- 🧭 Contoh Node-RED flow sederhana untuk import
 
-Ketik pilihan Anda (mis. "SSE client" atau "Node-RED flow") dan saya akan buatkan. 🚀
