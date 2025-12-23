@@ -120,9 +120,8 @@ Mau menambahkan fitur, perbaikan UI, atau contoh integrasi Node-RED? Silakan:
 **bagaspng**
 - GitHub: [@bagaspng](https://github.com/bagaspng)
 
----
 
----
+⭐ **Jangan lupa berikan star jika proyek ini bermanfaat!** ⭐
 
 Terima kasih sudah menggunakan Moisture Sense Dashboard! 🌿  
 
