@@ -1,24 +1,24 @@
 # 🌱 Moisture Sense Dashboard
 
 Selamat datang di Moisture Sense Dashboard! 🎉  
-Ini adalah tampilan web sederhana untuk memantau data kelembaban (moisture) secara realtime dari sensor (ESP). README ini dibuat ringkas, mudah dipahami, dan interaktif—dilengkapi emoji agar lebih enak dibaca. 😉
+Ini adalah tampilan web sederhana untuk memantau data suhu dan kelembaban (tanah & udara) secara realtime dari sensor (ESP). 
 
 ---
 
 ## 🔎 Ringkasan singkat
 - Tujuan: Menampilkan data kelembaban secara realtime dalam tampilan yang mudah dibaca.
-- Sumber data: Sensor ESP → (via MQTT) → Node-RED (terpisah) → Dashboard (mengambil data lewat HTTP / SSE / WebSocket).
+- Sumber data: Sensor ESP → (via MQTT) → Node-RED (terpisah) → Dashboard (mengambil data lewat).
 - Catatan penting: Dashboard ini hanya *client* (frontend). Backend Node-RED dan broker MQTT berjalan terpisah.
 
 ---
 
 ## 🧭 Cara kerja (secara sederhana)
-1. Sensor (ESP) mengirim data kelembaban ke MQTT broker. 📡  
+1. Sensor (ESP) mengirim data sensor ke MQTT broker. 📡  
 2. Node-RED subscribe topik MQTT tersebut, memproses data, dan menyediakan API atau stream untuk dashboard. 🔁  
-3. Dashboard mengambil data dari Node-RED melalui HTTP atau koneksi realtime (SSE/WebSocket) dan menampilkan hasilnya. 💻➡️📊
+3. Dashboard mengambil data dari Node-RED melalui HTTP dan menampilkan hasilnya. 💻➡️📊
 
 Flow singkat:
-ESP (MQTT) → MQTT Broker → Node-RED → Dashboard (HTTP / SSE / WS)
+ESP (MQTT) → MQTT Broker → Node-RED → Dashboard (HTTP)
 
 ---
 
@@ -27,7 +27,7 @@ ESP (MQTT) → MQTT Broker → Node-RED → Dashboard (HTTP / SSE / WS)
 - 🕒 Timestamp terakhir diterima  
 - 📉 Grafik/riwayat data (jika tersedia dari Node-RED)  
 - 🔴🟢 Indikator status koneksi (online / offline)  
-- ⚙️ Dukungan beberapa sensor (jika dikonfigurasi)
+- ⚙️ Dukungan beberapa sensor 
 
 ---
 
