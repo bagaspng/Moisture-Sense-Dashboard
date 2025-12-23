@@ -115,6 +115,11 @@ Mau menambahkan fitur, perbaikan UI, atau contoh integrasi Node-RED? Silakan:
 1. Buka issue dengan menjelaskan ide/bug. 📝  
 2. Fork repo, buat perubahan, lalu kirim pull request. 🔁
 
+## 👨‍💻 Author
+
+**bagaspng**
+- GitHub: [@bagaspng](https://github.com/bagaspng)
+
 ---
 
 ---
