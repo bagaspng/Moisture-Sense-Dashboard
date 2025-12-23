@@ -1,0 +1,434 @@
+[
+  {
+    "id": "968beda0828e5300",
+    "type": "tab",
+    "label": "🌿 Smart Farming Flow",
+    "disabled": false,
+    "info": "Flow utama sistem Smart Farming berbasis MQTT + API untuk frontend MoisSense"
+  },
+  {
+    "id": "3bcd9d5ddd094370",
+    "type": "mqtt in",
+    "z": "968beda0828e5300",
+    "name": "Data dari ESP2",
+    "topic": "smartfarm/data",
+    "qos": "0",
+    "datatype": "json",
+    "broker": "e7e0e15bc9473d17",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 180,
+    "y": 120,
+    "wires": [
+      [
+        "464f68156481fc37"
+      ]
+    ]
+  },
+  {
+    "id": "464f68156481fc37",
+    "type": "function",
+    "z": "968beda0828e5300",
+    "name": "Pisah + Simpan State & Event",
+    "func": "// Payload dari ESP2 diasumsikan bentuknya:\n// { suhu: 24, kelembapan: 68, soil: 580, rain: 720, pompa: \"ON\" }\n\nconst d = msg.payload || {};\n\n// Hitung status hujan\nconst rainStatus = d.rain < 700 ? \"🌧 Hujan\" : \"☀ Cerah\";\n\n// Ambil state sebelumnya untuk cek perubahan\nconst prevState = flow.get('moissense_state') || {};\n\n// Simpan state terbaru ke flow context\nconst state = {\n    suhu: d.suhu || 0,\n    kelembapan: d.kelembapan || 0,\n    soil: d.soil || 0,\n    rain_raw: d.rain || 0,\n    rain_status: rainStatus,\n    pompa: d.pompa || \"OFF\",\n    updated_at: Date.now()\n};\nflow.set('moissense_state', state);\n\n// Buat event history sederhana (max 50 item)\nlet events = flow.get('moissense_events') || [];\n\n// Tambah event hanya jika ada perubahan penting (pompa atau hujan)\nif (prevState.pompa !== state.pompa) {\n    events.unshift({\n        ts: new Date().toISOString(),\n        type: state.pompa === 'ON' ? 'Pump ON' : 'Pump OFF',\n        level: 'info',\n        message: `Pump ${state.pompa} (soil=${state.soil})`\n    });\n}\nif (prevState.rain_status !== state.rain_status) {\n    events.unshift({\n        ts: new Date().toISOString(),\n        type: 'Rain',\n        level: 'info',\n        message: `Cuaca berubah: ${state.rain_status}`\n    });\n}\n\n// Tambah event warning ketika soil sangat kering (contoh threshold)\nif (state.soil < 300 && prevState.soil >= 300) {\n    events.unshift({\n        ts: new Date().toISOString(),\n        type: 'Warning',\n        level: 'warn',\n        message: `Tanah kering, nilai soil=${state.soil}`\n    });\n}\n\n// Batasi hanya 50 event terbaru\nif (events.length > 50) {\n    events = events.slice(0, 50);\n}\nflow.set('moissense_events', events);\n\n// Output untuk dashboard Node-RED (jika masih ingin dipakai)\nconst msgSuhu = { payload: state.suhu };\nconst msgKelembapan = { payload: state.kelembapan };\nconst msgSoil = { payload: state.soil };\nconst msgRain = { payload: state.rain_status };\nconst msgPompa = { payload: state.pompa };\n\nreturn [msgSuhu, msgKelembapan, msgSoil, msgRain, msgPompa];",
+    "outputs": 5,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 470,
+    "y": 120,
+    "wires": [
+      [
+        "e02724b5c6c71155"
+      ],
+      [
+        "38d033e8082ceac0"
+      ],
+      [
+        "3a1c260b9cef1d5e"
+      ],
+      [
+        "37bad04e12e35aab"
+      ],
+      [
+        "d5f8a7a353484bd6"
+      ]
+    ]
+  },
+  {
+    "id": "e02724b5c6c71155",
+    "type": "ui_gauge",
+    "z": "968beda0828e5300",
+    "name": "Suhu (°C)",
+    "group": "ebf32ae6b15cabcd",
+    "order": 1,
+    "width": "6",
+    "height": "4",
+    "gtype": "gage",
+    "title": "🌡 Suhu Udara (°C)",
+    "label": "°C",
+    "format": "{{value}}",
+    "min": 0,
+    "max": "50",
+    "colors": [
+      "#00BFFF",
+      "#7FFF00",
+      "#FF4500"
+    ],
+    "x": 780,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "38d033e8082ceac0",
+    "type": "ui_gauge",
+    "z": "968beda0828e5300",
+    "name": "Kelembapan Udara (%)",
+    "group": "ebf32ae6b15cabcd",
+    "order": 2,
+    "width": "6",
+    "height": "4",
+    "gtype": "gage",
+    "title": "💧 Kelembapan Udara (%)",
+    "label": "%",
+    "format": "{{value}}",
+    "min": 0,
+    "max": "100",
+    "colors": [
+      "#0033FF",
+      "#00FFCC",
+      "#00CC00"
+    ],
+    "x": 800,
+    "y": 90,
+    "wires": []
+  },
+  {
+    "id": "3a1c260b9cef1d5e",
+    "type": "ui_gauge",
+    "z": "968beda0828e5300",
+    "name": "Kelembapan Tanah",
+    "group": "ebf32ae6b15cabcd",
+    "order": 3,
+    "width": "6",
+    "height": "4",
+    "gtype": "gage",
+    "title": "🌱 Kelembapan Tanah (ADC)",
+    "label": "nilai ADC",
+    "format": "{{value}}",
+    "min": 0,
+    "max": "1023",
+    "colors": [
+      "#6600FF",
+      "#00FF99",
+      "#FFFF00"
+    ],
+    "x": 810,
+    "y": 140,
+    "wires": []
+  },
+  {
+    "id": "37bad04e12e35aab",
+    "type": "ui_text",
+    "z": "968beda0828e5300",
+    "group": "ebf32ae6b15cabcd",
+    "order": 4,
+    "width": "6",
+    "height": "1",
+    "name": "Status Cuaca",
+    "label": "☔ Cuaca Saat Ini:",
+    "format": "<b>{{msg.payload}}</b>",
+    "layout": "row-spread",
+    "x": 790,
+    "y": 190,
+    "wires": []
+  },
+  {
+    "id": "d5f8a7a353484bd6",
+    "type": "ui_text",
+    "z": "968beda0828e5300",
+    "group": "ebf32ae6b15cabcd",
+    "order": 5,
+    "width": "6",
+    "height": "1",
+    "name": "Status Pompa",
+    "label": "⚙ Pompa:",
+    "format": "<b>{{msg.payload}}</b>",
+    "layout": "row-spread",
+    "x": 790,
+    "y": 230,
+    "wires": []
+  },
+  {
+    "id": "188079a66ea45b07",
+    "type": "ui_switch",
+    "z": "968beda0828e5300",
+    "name": "Kontrol Pompa (Dashboard)",
+    "label": "🕹 Kontrol Pompa",
+    "tooltip": "Geser untuk menyalakan/mematikan pompa secara manual",
+    "group": "ebf32ae6b15cabcd",
+    "order": 6,
+    "width": "6",
+    "height": "1",
+    "passthru": true,
+    "decouple": "false",
+    "topic": "smartfarm/pompa",
+    "topicType": "str",
+    "style": "",
+    "onvalue": "ON",
+    "onvalueType": "str",
+    "onicon": "",
+    "oncolor": "#00FF00",
+    "offvalue": "OFF",
+    "offvalueType": "str",
+    "officon": "",
+    "offcolor": "#FF0000",
+    "animate": true,
+    "className": "",
+    "x": 260,
+    "y": 260,
+    "wires": [
+      [
+        "21df1c706d7ed005"
+      ]
+    ]
+  },
+  {
+    "id": "21df1c706d7ed005",
+    "type": "mqtt out",
+    "z": "968beda0828e5300",
+    "name": "Kirim ke ESP2",
+    "topic": "smartfarm/pompa",
+    "qos": "",
+    "retain": "",
+    "respTopic": "",
+    "contentType": "",
+    "userProps": "",
+    "correl": "",
+    "expiry": "",
+    "broker": "e7e0e15bc9473d17",
+    "x": 630,
+    "y": 320,
+    "wires": []
+  },
+  {
+    "id": "b1f0c3a0d1e2f300",
+    "type": "http in",
+    "z": "968beda0828e5300",
+    "name": "API GET /api/latest",
+    "url": "/api/latest",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 170,
+    "y": 360,
+    "wires": [
+      [
+        "e4c2a1b0f9d8e700"
+      ]
+    ]
+  },
+  {
+    "id": "e4c2a1b0f9d8e700",
+    "type": "function",
+    "z": "968beda0828e5300",
+    "name": "Get Latest State",
+    "func": "const state = flow.get('moissense_state') || {};\n\n// Jika belum ada data, kembalikan default\nif (!state.updated_at) {\n    msg.payload = {\n        suhu: 0,\n        kelembapan: 0,\n        soil: 0,\n        rain_status: \"-\",\n        pompa: \"OFF\",\n        updated_at: null\n    };\n} else {\n    msg.payload = state;\n}\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 390,
+    "y": 360,
+    "wires": [
+      [
+        "c0ffee123456abcd"
+      ]
+    ]
+  },
+  {
+    "id": "c0ffee123456abcd",
+    "type": "http response",
+    "z": "968beda0828e5300",
+    "name": "Respon Latest",
+    "statusCode": "",
+    "headers": {},
+    "x": 610,
+    "y": 360,
+    "wires": []
+  },
+  {
+    "id": "aabbccddeeff0011",
+    "type": "http in",
+    "z": "968beda0828e5300",
+    "name": "API GET /api/events",
+    "url": "/api/events",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 170,
+    "y": 410,
+    "wires": [
+      [
+        "1122334455667788"
+      ]
+    ]
+  },
+  {
+    "id": "1122334455667788",
+    "type": "function",
+    "z": "968beda0828e5300",
+    "name": "Get Events",
+    "func": "const events = flow.get('moissense_events') || [];\nmsg.payload = events;\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 390,
+    "y": 410,
+    "wires": [
+      [
+        "99aabbccddeeff00"
+      ]
+    ]
+  },
+  {
+    "id": "99aabbccddeeff00",
+    "type": "http response",
+    "z": "968beda0828e5300",
+    "name": "Respon Events",
+    "statusCode": "",
+    "headers": {},
+    "x": 610,
+    "y": 410,
+    "wires": []
+  },
+  {
+    "id": "fedcba9876543210",
+    "type": "http in",
+    "z": "968beda0828e5300",
+    "name": "API POST /api/pump",
+    "url": "/api/pump",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 170,
+    "y": 470,
+    "wires": [
+      [
+        "0f1e2d3c4b5a6978"
+      ]
+    ]
+  },
+  {
+    "id": "0f1e2d3c4b5a6978",
+    "type": "json",
+    "z": "968beda0828e5300",
+    "name": "Parse JSON Body",
+    "property": "payload",
+    "action": "",
+    "pretty": false,
+    "x": 380,
+    "y": 470,
+    "wires": [
+      [
+        "1234abcd5678ef90"
+      ]
+    ]
+  },
+  {
+    "id": "1234abcd5678ef90",
+    "type": "function",
+    "z": "968beda0828e5300",
+    "name": "Handle Pump Command",
+    "func": "const body = msg.payload || {};\nlet cmd = (body.cmd || \"\").toString().toUpperCase();\n\nif (cmd !== 'ON' && cmd !== 'OFF') {\n    msg.statusCode = 400;\n    msg.payload = { error: \"cmd must be 'ON' or 'OFF'\" };\n    return [null, msg];\n}\n\n// Update state di flow\nlet state = flow.get('moissense_state') || {};\nstate.pompa = cmd;\nstate.updated_at = Date.now();\nflow.set('moissense_state', state);\n\n// Tambah event\nlet events = flow.get('moissense_events') || [];\nevents.unshift({\n    ts: new Date().toISOString(),\n    type: cmd === 'ON' ? 'Pump ON' : 'Pump OFF',\n    level: 'info',\n    message: `Pump ${cmd} via API`\n});\nif (events.length > 50) events = events.slice(0, 50);\nflow.set('moissense_events', events);\n\n// Output 1 → MQTT OUT, Output 2 → HTTP Response\nconst msgMqtt = {\n    topic: 'smartfarm/pompa',\n    payload: cmd\n};\n\nconst msgHttp = {\n    payload: { status: 'ok', pump_state: cmd }\n};\n\nreturn [msgMqtt, msgHttp];",
+    "outputs": 2,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 610,
+    "y": 470,
+    "wires": [
+      [
+        "21df1c706d7ed005"
+      ],
+      [
+        "deadbeefcafebabe"
+      ]
+    ]
+  },
+  {
+    "id": "deadbeefcafebabe",
+    "type": "http response",
+    "z": "968beda0828e5300",
+    "name": "Respon Pump",
+    "statusCode": "",
+    "headers": {},
+    "x": 860,
+    "y": 470,
+    "wires": []
+  },
+  {
+    "id": "e7e0e15bc9473d17",
+    "type": "mqtt-broker",
+    "name": "Local",
+    "broker": "192.168.164.116",
+    "port": 1883,
+    "clientid": "",
+    "autoConnect": true,
+    "usetls": false,
+    "protocolVersion": 4,
+    "keepalive": 60,
+    "cleansession": true,
+    "autoUnsubscribe": true,
+    "birthTopic": "Masuk!",
+    "birthQos": "0",
+    "birthRetain": "false",
+    "birthPayload": "",
+    "birthMsg": {},
+    "closeTopic": "",
+    "closeQos": "0",
+    "closeRetain": "false",
+    "closePayload": "",
+    "closeMsg": {},
+    "willTopic": "",
+    "willQos": "0",
+    "willRetain": "false",
+    "willPayload": "",
+    "willMsg": {},
+    "userProps": "",
+    "sessionExpiry": ""
+  },
+  {
+    "id": "ebf32ae6b15cabcd",
+    "type": "ui_group",
+    "name": "Smart Farming",
+    "tab": "c9f2ae6a7e90abcd",
+    "order": 1,
+    "disp": true,
+    "width": "6",
+    "collapse": false
+  },
+  {
+    "id": "c9f2ae6a7e90abcd",
+    "type": "ui_tab",
+    "name": "🌾 Smart Farming Dashboard",
+    "icon": "dashboard",
+    "disabled": false,
+    "hidden": false
+  },
+  {
+    "id": "a9926ba07a27b516",
+    "type": "global-config",
+    "env": [],
+    "modules": {
+      "node-red-dashboard": "3.6.6"
+    }
+  }
+]
