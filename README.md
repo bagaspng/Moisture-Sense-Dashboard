@@ -72,7 +72,7 @@ POLL_INTERVAL=5000
 
 ## 🔌 Contoh kontrak data yang diharapkan dari Node-RED
 Agar dashboard bekerja lancar, Node-RED biasanya menyediakan endpoint sederhana. Contoh yang disarankan:
-
+```
 - GET /api/moisture/latest?sensorId=esp32-1  
   Response (JSON):
   {
@@ -80,21 +80,21 @@ Agar dashboard bekerja lancar, Node-RED biasanya menyediakan endpoint sederhana.
     "moisture": 45,
     "timestamp": "2025-12-23T08:30:00Z"
   }
-
-- GET /api/moisture/history?sensorId=esp32-1&limit=50  
-  Response: array data (untuk grafik)
-
-- (Opsional) SSE: GET /api/moisture/stream  
-  - Mendorong event tiap kali data baru datang
+```
+ Response: array data (untuk grafik)
+```
+GET /api/moisture/history?sensorId=esp32-1&limit=50  
+```
 
 Contoh payload MQTT dari ESP (agar Node-RED mudah memproses):
+```
 {
   "sensorId": "esp32-1",
   "moisture": 45,
   "battery": 3.7,
   "timestamp": "2025-12-23T08:30:00Z"
 }
-
+```
 ---
 
 ## 🛠️ Troubleshooting (masalah umum)
